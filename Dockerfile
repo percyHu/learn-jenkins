@@ -1,5 +1,5 @@
-# 基础镜像 - 使用轻量级的 OpenJDK 镜像（Java 17，如果你的项目用的 Java 是其他版本，请更换）
-FROM docker.io/library/openjdk:17-jdk-slim
+# 基础镜像 - 使用轻量级的 OpenJDK 镜像（Java 21，如果你的项目用的 Java 是其他版本，请更换）
+FROM docker.io/library/openjdk:21-jdk-slim
 
 # 设置工作目录
 WORKDIR /app
