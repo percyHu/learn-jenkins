@@ -1,0 +1,56 @@
+pipeline {
+    agent any // 使用任何可用的节点
+    environment {
+        GIT_REPO_URL = "https://github.com/percyHu/learn-jenkins.git"
+        PODMAN_IMAGE_NAME = "learn-jenkins:latest" // 定义镜像名称
+        PODMAN_CONTAINER_NAME = "learn-jenkins-container" // 定义容器名称
+        APP_PORT = '8989' // 应用程序运行的端口号
+        HOST_PORT = '8989' // 主机端口映射
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                // 检出代码
+                git branch: 'main', url: "${GIT_REPO_URL}"
+            }
+        }
+
+        stage('Build with Gradle') {
+            steps {
+                echo 'Building application...'
+                // Gradle 构建
+                sh './gradlew clean build -x test'
+            }
+        }
+
+        stage('Build Podman Image') {
+            steps {
+                echo 'Building Podman Image...'
+                // 根据 Dockerfile 用 Podman 构建镜像
+                sh """
+                if ! podman image exists "${PODMAN_IMAGE_NAME}"; then
+                    echo "Podman image '${PODMAN_IMAGE_NAME}' not found. Try to build a new image."
+                    podman build -t ${PODMAN_IMAGE_NAME} -f Dockerfile
+                fi
+                """
+            }
+        }
+
+        stage('Run Podman Container') {
+            steps {
+                echo 'Running Podman container...'
+                // 先停止已有的容器（如果存在）
+                sh """
+                podman rm -f ${PODMAN_CONTAINER_NAME} || true
+                podman run -d --name ${PODMAN_CONTAINER_NAME} -p ${HOST_PORT}:${APP_PORT} ${PODMAN_IMAGE_NAME}
+                """
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Job completed!'
+        }
+    }
+}
