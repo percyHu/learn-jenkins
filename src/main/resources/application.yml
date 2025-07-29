@@ -1,5 +1,27 @@
 spring:
   application:
     name: learn-jenkins
+
 server:
   port: 8989
+
+# 健康检查和监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # 暴露的端点
+      base-path: /actuator  # 端点基础路径（默认就是/actuator）
+  endpoint:
+    health:
+      show-details: always  # 显示健康检查详细信息
+      cache:
+        time-to-live: 10000ms  # 健康检查结果缓存时间
+
+# 应用信息配置（将显示在/actuator/info端点）
+info:
+  app:
+    name: ${spring.application.name}
+    port: ${server.port}
+    version: ${project.version}  # 从构建文件中获取版本号
+    description: A Spring Boot application deployed with Jenkins and Kubernetes
