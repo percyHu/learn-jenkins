@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: learn-jenkins-app-deployment
+  name: learn-jenkins-deployment
   labels:
     app: learn-jenkins-app
 spec:
