@@ -19,6 +19,7 @@ pipeline {
         stage('Build with Gradle') {
             tools {
                 gradle 'gradle-8.14'
+                jdk 'JDK-21'
             }
             steps {
                 echo 'Building application...'
