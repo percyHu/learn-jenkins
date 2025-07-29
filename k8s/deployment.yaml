@@ -2,8 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: learn-jenkins-app-deployment
+  labels:
+    app: learn-jenkins-app
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate  # 滚动更新策略
+    rollingUpdate:
+      maxSurge: 25%      # 可以超过期望副本数的百分比
+      maxUnavailable: 25%  # 最大不可用副本百分比
   selector:
     matchLabels:
       app: learn-jenkins-app
@@ -12,10 +19,58 @@ spec:
       labels:
         app: learn-jenkins-app
     spec:
-      template:
-        spec:
-          containers:
-            - name: my-app
-              image: ${IMAGE_NAME}  # 动态替换
-              ports:
-                - containerPort: 8080
+      containers:
+        - name: learn-jenkins-app
+          image: ${IMAGE_NAME}
+          imagePullPolicy: IfNotPresent  # 镜像拉取策略
+          ports:
+            - containerPort: 8080
+              name: http-port  # 命名端口
+          resources:
+            limits:
+              cpu: 500m        # 最大 0.5 核 CPU
+              memory: 512Mi     # 最大内存
+            requests:
+              cpu: 50m          # 最小 0.05 核 CPU
+              memory: 100Mi      # 最小内存
+              ephemeral-storage: "200Mi"
+
+          # 健康检查
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # 环境变量
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: production
+            - name: JAVA_OPTS
+              value: "-XX:MaxRAMPercentage=75.0"
+
+      # 安全上下文
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      # 不自动挂载 ServiceAccount 令牌
+      automountServiceAccountToken: false
+
+      # 镜像拉取凭据（如果需要）
+      # imagePullSecrets:
+      # - name: regcred
+
+      # 重启策略
+      restartPolicy: Always
