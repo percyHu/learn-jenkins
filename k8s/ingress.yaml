@@ -19,3 +19,4 @@ spec:
                 name: learn-jenkins-service
                 port:
                   number: 80  # 指向Service的80端口（更符合常规实践）
+  ingressClassName: nginx
