@@ -24,7 +24,7 @@ spec:
           image: ${IMAGE_NAME}
           imagePullPolicy: IfNotPresent  # 镜像拉取策略
           ports:
-            - containerPort: 8080
+            - containerPort: 8989
               name: http-port  # 命名端口
           resources:
             limits:
@@ -39,7 +39,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8989
             initialDelaySeconds: 30 # 启动后30秒开始探测，若应用启动慢（如初始化耗时10秒），会误判失败
             periodSeconds: 10
             timeoutSeconds: 2  # 超时时间太短，接口响应慢时会失败
@@ -48,7 +48,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8989
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 2  # 超时时间太短，接口响应慢时会失败
