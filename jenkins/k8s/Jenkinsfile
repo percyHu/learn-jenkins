@@ -69,7 +69,7 @@ pipeline {
                     // 使用 kubectl 应用配置
                     withCredentials([file(credentialsId: 'local-k8s-config', variable: 'KUBECONFIG')]) {
                         sh """
-                        kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -n ${K8S_NAMESPACE}
+                        kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/ingress.yaml -n ${K8S_NAMESPACE}
 
                         # 等待部署完成
                         kubectl rollout status deployment/${APP_NAME}-deployment -n ${K8S_NAMESPACE}
