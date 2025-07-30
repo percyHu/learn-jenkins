@@ -6,6 +6,6 @@ spec:
   selector:
     app: learn-jenkins-app
   ports:
-    - port: 8080 # 服务对外暴露的端口
-      targetPort: 8080 # 容器内应用的实际端口
+    - port: 80 # 服务对外暴露80端口（Ingress默认使用80）
+      targetPort: 8989 # 转发到容器内的8989端口
   type: ClusterIP  # 默认类型

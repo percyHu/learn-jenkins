@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: learn-jenkins-ingress
+  annotations:
+    # 禁用HTTPS重定向，本地环境通常不需要
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # 允许较大的请求体，适合开发测试
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  rules:
+    - host: learn-jenkins.local  # 本地访问的虚拟主机名
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: learn-jenkins-service
+                port:
+                  number: 80  # 指向Service的80端口（更符合常规实践）
