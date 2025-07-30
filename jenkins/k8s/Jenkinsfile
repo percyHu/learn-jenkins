@@ -1,64 +1,80 @@
 pipeline {
     agent any
+
     environment {
+        // 使用内部域名和端口
         GIT_REPO_URL = "https://github.com/percyHu/learn-jenkins.git"
-        APP_NAME = "learn-jenkins"
-        IMAGE_REGISTRY = "localhost" // 本地镜像仓库
-        IMAGE_NAME = "${IMAGE_REGISTRY}/${APP_NAME}:${BUILD_NUMBER}"
-        K8S_NAMESPACE = "jenkins-namespace"
+        REGISTRY_URL = 'local-registry-5000:5000'
+        APP_NAME = 'learn-jenkins'
+        IMAGE_NAME = "${REGISTRY_URL}/${APP_NAME}:${BUILD_NUMBER}"
+        K8S_NAMESPACE = 'jenkins-namespace'
     }
 
     stages {
         stage('Checkout') {
             steps {
+                // checkout scm
                 echo 'Checking out source code...'
                 git branch: 'main', url: "${GIT_REPO_URL}"
             }
         }
 
         stage('Build with Gradle') {
-            tools {
-                gradle 'gradle-8.14'
-                jdk 'JDK-21'
-            }
             steps {
-                echo 'Building application...'
                 sh './gradlew clean build -x test'
             }
         }
 
         stage('Build Podman Image') {
             steps {
-                echo 'Building Podman Image...'
-                sh """
-                podman build -t ${IMAGE_NAME} -f Dockerfile
-                """
+                script {
+                    // 配置 Podman 信任非安全仓库
+                    sh """
+                    mkdir -p /etc/containers/registries.conf.d
+                    echo '''
+                    [[registry]]
+                    location = "${REGISTRY_URL}"
+                    insecure = true
+                    ''' | sudo tee /etc/containers/registries.conf.d/local-registry.conf
+
+                    # 构建镜像
+                    podman build -t ${IMAGE_NAME} -f Dockerfile .
+                    """
+                }
             }
         }
 
         stage('Push to Local Registry') {
             steps {
-                sh """
-                podman push ${IMAGE_NAME}
-                """
+                script {
+                    sh """
+                    # 推送镜像
+                    podman push ${IMAGE_NAME}
+
+                    # 验证镜像推送
+                    curl http://${REGISTRY_URL}/v2/_catalog
+                    """
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                // 使用 withCredentials 确保 Kubernetes 配置安全
-                withCredentials([file(credentialsId: 'local-k8s-config', variable: 'KUBECONFIG')]) {
-                    // 动态替换镜像名称
+                script {
+                    // 替换 deployment.yaml 中的镜像名称
                     sh """
-                    # 替换 deployment.yaml 中的镜像名称
                     sed -i 's|\${IMAGE_NAME}|${IMAGE_NAME}|g' k8s/deployment.yaml
-
-                    # 应用 Kubernetes 配置
-                    kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -n ${K8S_NAMESPACE}
-
-                    # 等待部署就绪
-                    kubectl rollout status deployment/${APP_NAME}-deployment -n ${K8S_NAMESPACE}
                     """
+
+                    // 使用 kubectl 应用配置
+                    withCredentials([file(credentialsId: 'local-k8s-config', variable: 'KUBECONFIG')]) {
+                        sh """
+                        kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -n ${K8S_NAMESPACE}
+
+                        # 等待部署完成
+                        kubectl rollout status deployment/${APP_NAME}-deployment -n ${K8S_NAMESPACE}
+                        """
+                    }
                 }
             }
         }
@@ -66,13 +82,13 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment successful!'
+            echo '部署成功!'
         }
         failure {
-            echo 'Deployment failed!'
+            echo '部署失败!'
         }
         always {
-            // 清理本地镜像（可选）
+            // 清理本地镜像
             sh """
             podman rmi ${IMAGE_NAME} || true
             """

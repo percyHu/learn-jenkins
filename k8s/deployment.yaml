@@ -38,18 +38,20 @@ spec:
           # 健康检查
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: /actuator/health
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 30 # 启动后30秒开始探测，若应用启动慢（如初始化耗时10秒），会误判失败
             periodSeconds: 10
+            timeoutSeconds: 2  # 超时时间太短，接口响应慢时会失败
             failureThreshold: 3
 
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: /actuator/health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 2  # 超时时间太短，接口响应慢时会失败
             failureThreshold: 3
 
           # 环境变量
