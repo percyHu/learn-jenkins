@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: learn-jenkins-ingress
+  namespace: ingress-nginx
   annotations:
     # 禁用HTTPS重定向，本地环境通常不需要
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
@@ -17,6 +18,7 @@ spec:
             backend:
               service:
                 name: learn-jenkins-service
+                namespace: jenkins-namespace
                 port:
                   number: 80  # 指向Service的80端口（更符合常规实践）
   ingressClassName: nginx
