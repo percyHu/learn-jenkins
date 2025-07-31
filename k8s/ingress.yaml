@@ -8,7 +8,6 @@ metadata:
     # 允许较大的请求体，适合开发测试
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/service-upstream: "true"
-    nginx.ingress.kubernetes.io/upstream-vhost: "learn-jenkins-service.${K8S_NAMESPACE}.svc.cluster.local"
 spec:
   ingressClassName: nginx
   rules:
